@@ -1,0 +1,103 @@
+[
+  {
+    "step": 1,
+    "agent": "A1-主",
+    "type": "serial",
+    "description": "串行执行D1-D4,D6-D9维度审查",
+    "input": {
+      "review_type": "全面审查",
+      "topic": "Phase 0-4架构升级后评估",
+      "dimensions": [
+        "D1",
+        "D2",
+        "D3",
+        "D4",
+        "D6",
+        "D7",
+        "D8",
+        "D9"
+      ]
+    },
+    "output_format": "A1_主_审查报告.md",
+    "timeout": 600
+  },
+  {
+    "step": 2,
+    "agent": "A1-D5-1",
+    "type": "parallel",
+    "description": "D5维度：规则→执行映射",
+    "input": {
+      "review_type": "全面审查",
+      "topic": "Phase 0-4架构升级后评估",
+      "spec_file": "/workspace/KZCQL/02_子Agent规范/架构专家组/A1_D5_1.md"
+    },
+    "output_format": "A1-D5-1_报告.md",
+    "timeout": 300,
+    "weight": 0.3
+  },
+  {
+    "step": 2,
+    "agent": "A1-D5-2",
+    "type": "parallel",
+    "description": "D5维度：执行→验证映射",
+    "input": {
+      "review_type": "全面审查",
+      "topic": "Phase 0-4架构升级后评估",
+      "spec_file": "/workspace/KZCQL/02_子Agent规范/架构专家组/A1_D5_2.md"
+    },
+    "output_format": "A1-D5-2_报告.md",
+    "timeout": 300,
+    "weight": 0.25
+  },
+  {
+    "step": 2,
+    "agent": "A1-D5-3",
+    "type": "parallel",
+    "description": "D5维度：悬空规则检测",
+    "input": {
+      "review_type": "全面审查",
+      "topic": "Phase 0-4架构升级后评估",
+      "spec_file": "/workspace/KZCQL/02_子Agent规范/架构专家组/A1_D5_3.md"
+    },
+    "output_format": "A1-D5-3_报告.md",
+    "timeout": 300,
+    "weight": 0.25
+  },
+  {
+    "step": 2,
+    "agent": "A1-D5-4",
+    "type": "parallel",
+    "description": "D5维度：盲评风险检测",
+    "input": {
+      "review_type": "全面审查",
+      "topic": "Phase 0-4架构升级后评估",
+      "spec_file": "/workspace/KZCQL/02_子Agent规范/架构专家组/A1_D5_4.md"
+    },
+    "output_format": "A1-D5-4_报告.md",
+    "timeout": 300,
+    "weight": 0.2
+  },
+  {
+    "step": 3,
+    "agent": "A1-整合",
+    "type": "integration",
+    "description": "整合所有子Agent评分，生成最终报告",
+    "input": {
+      "depends_on": [
+        "A1-主",
+        "A1-D5-1",
+        "A1-D5-2",
+        "A1-D5-3",
+        "A1-D5-4"
+      ],
+      "d5_weights": {
+        "A1-D5-1": 0.3,
+        "A1-D5-2": 0.25,
+        "A1-D5-3": 0.25,
+        "A1-D5-4": 0.2
+      }
+    },
+    "output_format": "A1_架构审查报告_最终.md",
+    "timeout": 120
+  }
+]
