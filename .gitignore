@@ -1,0 +1,15 @@
+# 忽略临时文件
+*.tmp
+*.log
+.DS_Store
+
+# 忽略上传文件目录（但保留结构）
+/.uploads/*
+!/.uploads/.gitkeep
+
+# 忽略node_modules（如果有）
+node_modules/
+
+# 忽略Python缓存
+__pycache__/
+*.pyc
