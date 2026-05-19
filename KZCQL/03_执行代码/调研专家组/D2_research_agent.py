@@ -3,6 +3,9 @@
 """
 D2 调研Agent - 可执行代码
 生成结构化的信息地图，为内容创作提供跨领域素材
+
+【P0修复标记】当前版本为演示版本，WebSearch为模拟实现
+真实WebSearch集成需要SOLO平台支持，详见call_websearch方法
 """
 
 import json
@@ -19,14 +22,17 @@ class D2ResearchAgent:
     """D2调研Agent实现"""
     
     def __init__(self, topic: str, domain_preference: List[str] = None, 
-                 excluded_domains: List[str] = None, time_range: str = None):
+                 excluded_domains: List[str] = None, time_range: str = None,
+                 demo_mode: bool = True):
         self.topic = topic
         self.domain_preference = domain_preference or []
         self.excluded_domains = excluded_domains or []
         self.time_range = time_range or "7天"
+        self.demo_mode = demo_mode  # P0修复：添加演示模式标记
         self.research_data = {
             "主题": topic,
             "调研时间": datetime.now().strftime("%Y-%m-%d %H:%M"),
+            "演示模式": demo_mode,  # P0修复：明确标记演示模式
             "调研维度": {
                 "必选维度": ["热点信息", "跨领域关联", "竞品内容分析", "历史案例"],
                 "可选维度": []
@@ -38,7 +44,8 @@ class D2ResearchAgent:
             "数据支撑": [],
             "人物/金句": [],
             "信息来源清单": [],
-            "矛盾信息标注": []
+            "矛盾信息标注": [],
+            "P0修复说明": "当前为演示版本，WebSearch为模拟实现。真实版本需要集成SOLO WebSearch工具。"
         }
         self.search_count = 0
         self.max_search = 19  # 搜索预算上限
@@ -53,50 +60,65 @@ class D2ResearchAgent:
         
     def call_websearch(self, query: str, num_results: int = 5) -> List[Dict]:
         """
-        调用真实WebSearch工具
-        使用SOLO的WebSearch工具进行搜索
+        【P0修复】WebSearch调用方法
+        
+        当前实现：演示模式（返回模拟数据）
+        真实实现：需要集成SOLO平台的WebSearch工具
+        
+        真实集成方案（待实现）：
+        1. 通过SOLO的WebSearch工具进行搜索
+        2. 解析搜索结果，提取标题、URL、摘要
+        3. 返回结构化数据
+        
+        由于当前环境限制，暂时使用演示模式
         """
         if not self.can_search():
             self.log(f"搜索预算已用完，跳过: {query}")
             return []
             
         self.search_count += 1
-        self.log(f"搜索 [{self.search_count}/{self.max_search}]: {query}")
         
-        try:
-            # 调用SOLO的WebSearch工具
-            import subprocess
-            import json
-            
-            # 使用curl调用WebSearch API
-            # 注意：实际环境中这里应该使用SOLO提供的WebSearch工具
-            # 这里使用subprocess模拟工具调用
-            result = subprocess.run(
-                ['python3', '-c', f'''
-import json
-# 模拟WebSearch工具调用
-# 实际部署时替换为真实的工具调用
-results = [
-    {{"title": "{query} - 搜索结果1", "url": "https://example.com/1", "snippet": "关于{query}的相关信息..."}},
-    {{"title": "{query} - 搜索结果2", "url": "https://example.com/2", "snippet": "深入分析{query}..."}},
-    {{"title": "{query} - 搜索结果3", "url": "https://example.com/3", "snippet": "{query}的最新动态..."}}
-]
-print(json.dumps(results[:{num_results}], ensure_ascii=False))
-                '''],
-                capture_output=True,
-                text=True,
-                timeout=30
-            )
-            
-            if result.returncode == 0:
-                return json.loads(result.stdout)
-            else:
-                self.log(f"搜索失败: {result.stderr}")
-                return []
+        if self.demo_mode:
+            self.log(f"[演示模式] 搜索 [{self.search_count}/{self.max_search}]: {query}")
+            # 演示模式：返回模拟数据
+            return [
+                {
+                    "title": f"{query} - 演示结果1", 
+                    "url": "https://demo.example.com/1", 
+                    "snippet": f"关于{query}的演示信息...",
+                    "source": "演示来源",
+                    "is_demo": True  # 明确标记为演示数据
+                },
+                {
+                    "title": f"{query} - 演示结果2", 
+                    "url": "https://demo.example.com/2", 
+                    "snippet": f"深入分析{query}的演示内容...",
+                    "source": "演示来源",
+                    "is_demo": True
+                },
+                {
+                    "title": f"{query} - 演示结果3", 
+                    "url": "https://demo.example.com/3", 
+                    "snippet": f"{query}的演示动态...",
+                    "source": "演示来源",
+                    "is_demo": True
+                }
+            ][:num_results]
+        else:
+            # 真实模式：集成SOLO WebSearch工具
+            self.log(f"[真实模式] 搜索 [{self.search_count}/{self.max_search}]: {query}")
+            try:
+                # TODO: 集成SOLO WebSearch工具
+                # from solo_tools import websearch
+                # results = websearch.search(query, num_results=num_results)
+                # return results
                 
-        except Exception as e:
-            self.log(f"搜索异常: {str(e)}")
-            return []
+                # 临时返回空列表，提示需要集成
+                self.log("警告：真实模式尚未集成WebSearch工具，返回空结果")
+                return []
+            except Exception as e:
+                self.log(f"搜索异常: {str(e)}")
+                return []
         
     def research_hot_topics(self) -> List[Dict]:
         """调研热点信息"""
@@ -114,12 +136,16 @@ print(json.dumps(results[:{num_results}], ensure_ascii=False))
                 break
             search_results = self.call_websearch(query)
             for r in search_results:
+                # P0修复：使用搜索结果中的source字段，如果是演示模式则明确标注
+                source = r.get("source", "未知来源")
+                is_demo = r.get("is_demo", False)
                 results.append({
                     "标题": r["title"],
-                    "来源": "模拟来源",
+                    "来源": f"{source} {'[演示数据]' if is_demo else ''}".strip(),
                     "时间": datetime.now().strftime("%Y-%m-%d"),
                     "摘要": r["snippet"],
-                    "来源URL": r["url"]
+                    "来源URL": r["url"],
+                    "is_demo": is_demo  # P0修复：保留演示标记
                 })
                 
         # 去重并限制数量
@@ -391,15 +417,29 @@ def main():
     parser.add_argument('--time-range', default='7天', help='时间范围')
     parser.add_argument('--output-dir', help='输出目录')
     parser.add_argument('--json-only', action='store_true', help='仅输出JSON')
+    # P0修复：添加演示模式开关
+    parser.add_argument('--demo-mode', action='store_true', default=True, 
+                        help='演示模式（默认True，使用模拟数据）')
+    parser.add_argument('--real-mode', action='store_true',
+                        help='真实模式（需要集成WebSearch工具）')
     
     args = parser.parse_args()
+    
+    # P0修复：确定模式
+    demo_mode = not args.real_mode  # 默认演示模式，除非指定--real-mode
+    
+    if demo_mode:
+        print("⚠️  警告：当前为演示模式，返回模拟数据")
+        print("   如需真实数据，请使用 --real-mode 参数（需要集成WebSearch工具）")
+        print()
     
     # 创建Agent实例
     agent = D2ResearchAgent(
         topic=args.topic,
         domain_preference=args.domain_preference,
         excluded_domains=args.exclude_domain,
-        time_range=args.time_range
+        time_range=args.time_range,
+        demo_mode=demo_mode  # P0修复：传递模式参数
     )
     
     # 执行调研
