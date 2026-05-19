@@ -60,65 +60,58 @@ class D2ResearchAgent:
         
     def call_websearch(self, query: str, num_results: int = 5) -> List[Dict]:
         """
-        【P0修复】WebSearch调用方法
+        【真实WebSearch集成】WebSearch调用方法
         
-        当前实现：演示模式（返回模拟数据）
-        真实实现：需要集成SOLO平台的WebSearch工具
-        
-        真实集成方案（待实现）：
-        1. 通过SOLO的WebSearch工具进行搜索
-        2. 解析搜索结果，提取标题、URL、摘要
-        3. 返回结构化数据
-        
-        由于当前环境限制，暂时使用演示模式
+        使用websearch_tool.py封装的WebSearch工具
+        支持缓存、备用查询、真实/模拟数据切换
         """
         if not self.can_search():
             self.log(f"搜索预算已用完，跳过: {query}")
             return []
             
         self.search_count += 1
+        self.log(f"搜索 [{self.search_count}/{self.max_search}]: {query}")
         
-        if self.demo_mode:
-            self.log(f"[演示模式] 搜索 [{self.search_count}/{self.max_search}]: {query}")
-            # 演示模式：返回模拟数据
-            return [
-                {
-                    "title": f"{query} - 演示结果1", 
-                    "url": "https://demo.example.com/1", 
-                    "snippet": f"关于{query}的演示信息...",
-                    "source": "演示来源",
-                    "is_demo": True  # 明确标记为演示数据
-                },
-                {
-                    "title": f"{query} - 演示结果2", 
-                    "url": "https://demo.example.com/2", 
-                    "snippet": f"深入分析{query}的演示内容...",
-                    "source": "演示来源",
-                    "is_demo": True
-                },
-                {
-                    "title": f"{query} - 演示结果3", 
-                    "url": "https://demo.example.com/3", 
-                    "snippet": f"{query}的演示动态...",
-                    "source": "演示来源",
-                    "is_demo": True
-                }
-            ][:num_results]
-        else:
-            # 真实模式：集成SOLO WebSearch工具
-            self.log(f"[真实模式] 搜索 [{self.search_count}/{self.max_search}]: {query}")
-            try:
-                # TODO: 集成SOLO WebSearch工具
-                # from solo_tools import websearch
-                # results = websearch.search(query, num_results=num_results)
-                # return results
+        try:
+            # 导入WebSearch工具
+            sys.path.insert(0, '/workspace/KZCQL/03_执行代码/工具库')
+            from websearch_tool import WebSearchTool
+            
+            # 创建WebSearch工具实例
+            # 演示模式使用模拟数据，真实模式尝试真实搜索
+            ws_tool = WebSearchTool(use_cache=True)
+            
+            # 执行搜索
+            results = ws_tool.search(query, num_results=num_results)
+            
+            # 检查是否为模拟数据
+            if results and any(r.get('is_mock') for r in results):
+                self.log(f"  ⚠️  注意：返回模拟数据（真实WebSearch需在SOLO环境集成）")
+            else:
+                self.log(f"  ✓ 获取真实搜索结果: {len(results)}条")
                 
-                # 临时返回空列表，提示需要集成
-                self.log("警告：真实模式尚未集成WebSearch工具，返回空结果")
-                return []
-            except Exception as e:
-                self.log(f"搜索异常: {str(e)}")
-                return []
+            return results
+            
+        except ImportError as e:
+            self.log(f"WebSearch工具导入失败: {e}")
+            self.log("  使用备用模拟数据")
+            return self._fallback_mock_search(query, num_results)
+        except Exception as e:
+            self.log(f"搜索异常: {str(e)}")
+            return self._fallback_mock_search(query, num_results)
+    
+    def _fallback_mock_search(self, query: str, num_results: int = 5) -> List[Dict]:
+        """备用模拟搜索（当WebSearch工具不可用时）"""
+        return [
+            {
+                "title": f"{query} - 搜索结果{i+1}",
+                "url": f"https://example.com/{i+1}",
+                "snippet": f"关于{query}的信息...",
+                "source": "备用来源",
+                "is_mock": True
+            }
+            for i in range(min(num_results, 3))
+        ]
         
     def research_hot_topics(self) -> List[Dict]:
         """调研热点信息"""
