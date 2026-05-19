@@ -1,7 +1,9 @@
 # 主Agent编排指南
 
-> **版本**: v1.4 | **最后更新**: 2026-05-19
-> **关联文件**: [README.md](./README.md) | [智能体注册表与路由规则.md](./智能体注册表与路由规则.md)
+> **版本**: v1.5 | **最后更新**: 2026-05-19
+> **关联文件**: [README.md](./README.md) | [智能体注册表与路由规则.md](./智能体注册表与路由规则.md) | [Orchestrator编排器](../02_子Agent规范/架构专家组/Orchestrator_编排器.md)
+>
+> **P30补丁更新**：新增Orchestrator编排器，强制规范Agent调用顺序
 
 ---
 
@@ -12,10 +14,69 @@
 主Agent 是 KZCQL 系统的**编排指挥官**，负责：
 
 - 接收用户任务并判定任务类型
+- **使用Orchestrator验证和编排Agent调用顺序**
 - 按路由规则调度子 Agent
 - 管理创作流程的状态和进度
 - 执行质量门检查
 - 向用户交付最终结果
+
+### 1.1b Orchestrator 编排器（P30补丁新增）
+
+**核心原则**：主Agent**必须**在调用Task工具前，使用Orchestrator验证调用顺序，然后**逐个串行调用**（而非批量并行）。
+
+#### 1.1b.1 编排器使用规范
+
+```python
+from orchestrator import Orchestrator
+
+# 1. 创建编排器实例
+orch = Orchestrator(
+    task_id="写作任务_001",
+    topic="AI写作工具对比"
+)
+
+# 2. 验证调用顺序（必须在调用Task工具前执行）
+if not orch.validate_sequence("W1"):
+    raise OrchestratorError("调用顺序错误：当前步骤不允许调用W1")
+
+# 3. 检查是否为强制Agent
+is_mandatory = orch.check_mandatory("W1")  # True
+
+# 4. 逐个串行调用（禁止批量并行）
+result = orch.call_agent(
+    agent_name="W1",
+    input_data={"topic": "AI写作工具对比"},
+    agent_func=w1_agent_function
+)
+```
+
+#### 1.1b.2 串行 vs 并行规则
+
+| 场景 | 调用方式 | 说明 |
+|------|----------|------|
+| **写作流程** (W1→R1→R2→R4) | **必须串行** | R1依赖W1输出，R2依赖R1结果 |
+| **迭代修改** (W2→R3→R2→R4) | **必须串行** | R3需要对比前后版本 |
+| **架构评估** (A1+D5-1/2/3/4) | **可并行** | D5四个维度相互独立 |
+| **联合督查** (主Agent+I1) | **必须并行** | 独立调查，交叉验证 |
+
+**硬性阻断规则**：
+- 串行场景使用批量并行调用 → **调用结果自动无效**
+- 跳过Orchestrator验证直接调用 → **流程违规**
+- MANDATORY_AGENTS被跳过 → **抛出OrchestratorError**
+
+#### 1.1b.3 编排器配置同步检查
+
+每次调用Agent前，主Agent必须确认：
+
+```markdown
+## 编排配置检查清单
+
+- [ ] AGENT_SEQUENCE 与智能体注册表一致
+- [ ] MANDATORY_AGENTS 列表正确 ["W1", "R1", "R2", "R4"]
+- [ ] OPTIONAL_AGENTS 决策已显式记录
+- [ ] 当前Agent调用顺序符合SEQUENCE
+- [ ] 调用记录已写入 agent_call_records.json
+```
 
 ### 1.2 主Agent 不是什么
 
