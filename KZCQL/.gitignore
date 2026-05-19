@@ -1,0 +1,21 @@
+# KZCQL 生成文件（不纳入版本控制）
+04_工作区/产出归档/*/稿件/*.docx
+04_工作区/产出归档/*/images/*.jpg
+04_工作区/产出归档/*/images/*.png
+04_工作区/架构归档/*.md
+
+# 临时文件
+*.tmp
+*.bak
+*.swp
+*~
+
+# 系统文件
+.DS_Store
+Thumbs.db
+
+# 工作区状态
+/workspace/STATE.md
+
+# 外部素材
+/workspace/理财访谈系列/01_原始素材/访谈记录/*.docx
