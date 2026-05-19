@@ -1,0 +1,94 @@
+{
+  "test_time": "2026-05-19 13:34:11",
+  "total_tests": 14,
+  "passed": 14,
+  "failed": 0,
+  "pass_rate": "100.0%",
+  "status": "通过",
+  "results": [
+    {
+      "test_name": "核心创作流程",
+      "passed": true,
+      "message": "核心流程顺序正确",
+      "timestamp": "2026-05-19 13:34:11"
+    },
+    {
+      "test_name": "强制Agent检查",
+      "passed": true,
+      "message": "强制Agent列表: ['W1', 'R1', 'R2', 'R4']",
+      "timestamp": "2026-05-19 13:34:11"
+    },
+    {
+      "test_name": "异常处理流程",
+      "passed": true,
+      "message": "异常处理流程存在",
+      "timestamp": "2026-05-19 13:34:11"
+    },
+    {
+      "test_name": "D2/D3可选流程",
+      "passed": true,
+      "message": "D2/D3为可选Agent，可跳过",
+      "timestamp": "2026-05-19 13:34:11"
+    },
+    {
+      "test_name": "D2→D3数据传递",
+      "passed": true,
+      "message": "数据传递机制存在",
+      "timestamp": "2026-05-19 13:34:11"
+    },
+    {
+      "test_name": "向后兼容性",
+      "passed": true,
+      "message": "不使用D2/D3时流程正常",
+      "timestamp": "2026-05-19 13:34:11"
+    },
+    {
+      "test_name": "编排器脚本",
+      "passed": true,
+      "message": "编排器配置正确",
+      "timestamp": "2026-05-19 13:34:11"
+    },
+    {
+      "test_name": "WebSearch工具",
+      "passed": true,
+      "message": "WebSearch工具可正常加载",
+      "timestamp": "2026-05-19 13:34:11"
+    },
+    {
+      "test_name": "D2调研Agent",
+      "passed": true,
+      "message": "D2 Agent可正常加载",
+      "timestamp": "2026-05-19 13:34:11"
+    },
+    {
+      "test_name": "D2输出格式",
+      "passed": true,
+      "message": "D2输出格式包含必要字段",
+      "timestamp": "2026-05-19 13:34:11"
+    },
+    {
+      "test_name": "D3输出格式",
+      "passed": true,
+      "message": "D3输出格式包含必要字段",
+      "timestamp": "2026-05-19 13:34:11"
+    },
+    {
+      "test_name": "D2/D3→W1数据兼容",
+      "passed": true,
+      "message": "数据格式兼容",
+      "timestamp": "2026-05-19 13:34:11"
+    },
+    {
+      "test_name": "智能体注册表",
+      "passed": true,
+      "message": "智能体注册表包含D2/D3",
+      "timestamp": "2026-05-19 13:34:11"
+    },
+    {
+      "test_name": "规范文件完整性",
+      "passed": true,
+      "message": "D2/D3规范文件存在",
+      "timestamp": "2026-05-19 13:34:11"
+    }
+  ]
+}
