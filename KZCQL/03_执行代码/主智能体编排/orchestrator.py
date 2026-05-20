@@ -15,6 +15,8 @@ from enum import Enum
 # 强制配置：禁止修改
 class OrchestratorConfig:
     """编排器强制配置"""
+
+    # ========== 串行Agent序列（写作流程）==========
     # 子智能体调用顺序（严格顺序，禁止跳过）
     AGENT_SEQUENCE = [
         "D2",  # 调研Agent（可选但不可跳过，必须显式决策）
@@ -27,16 +29,49 @@ class OrchestratorConfig:
         "R4",  # 评级判定（强制）
         "D1",  # 配图设计（强制，如需要配图）
     ]
-    
+
     # 强制调用的智能体（不可跳过）
     MANDATORY_AGENTS = ["W1", "R1", "R2", "R4"]
-    
+
     # 可选但必须决策的智能体
     OPTIONAL_AGENTS = ["D2", "D3", "ImageCheck", "R3", "D1"]
-    
+
+    # ========== 并行Agent组（架构评估流程）==========
+    # 架构评估并行组（可以同时并行调用）
+    ARCHITECTURE_PARALLEL_GROUPS = {
+        # 串行调用组（按顺序执行）
+        "A1-主组": ["A1-主"],  # 执行D1-D4, D6-D9
+
+        # 并行调用组（同时执行）
+        "D5-并行组": [
+            "D5-1",  # 规则执行映射
+            "D5-2",  # 执行验证映射
+            "D5-3",  # 悬空规则检测
+            "D5-4",  # 盲评风险检测
+        ],
+
+        # 串行调用组（按顺序执行）
+        "A1-整合组": ["A1-整合"],  # 整合所有结果
+    }
+
+    # 架构评估流程（完整序列）
+    ARCHITECTURE_SEQUENCE = [
+        "A1-主组",   # Step 4.1：串行
+        "D5-并行组", # Step 4.2：并行
+        "A1-整合组", # Step 4.3：串行
+    ]
+
+    # ========== 其他并行组（按需扩展）==========
+    # 联合督查并行组
+    INSPECTION_PARALLEL_GROUPS = {
+        "主Agent调查": ["主Agent调查"],
+        "I1调查": ["I1调查"],
+        "交叉验证": ["交叉验证"],
+    }
+
     # 最大重试次数
     MAX_RETRIES = 3
-    
+
     # 超时时间（秒）
     TIMEOUT_SECONDS = 300
 
@@ -288,14 +323,174 @@ class Orchestrator:
         禁止：未完成所有强制Agent就结束
         """
         called_agents = {r.agent_name for r in self.call_records}
-        
+
         for mandatory in OrchestratorConfig.MANDATORY_AGENTS:
             if mandatory not in called_agents:
                 self.log(f"验证失败：强制Agent [{mandatory}] 未被调用", "ERROR")
                 return False
-                
+
         self.log("流程验证通过：所有强制Agent已调用")
         return True
+
+    # ========== 并行调用支持（P33补丁新增）==========
+    def call_parallel_group(self, group_name: str, agents_data: Dict[str, Dict],
+                              agent_funcs: Dict[str, Callable]) -> Dict[str, Dict]:
+        """
+        调用并行Agent组（P33补丁新增）
+
+        用于架构评估等需要并行执行的场景：
+        - A1-主组（串行）：执行D1-D4, D6-D9
+        - D5-并行组（并行）：D5-1/2/3/4同时执行
+        - A1-整合组（串行）：整合所有结果
+
+        注意：SOLO环境使用Task工具并行调用多个子代理
+
+        Args:
+            group_name: 并行组名称
+            agents_data: {agent_name: input_data} 格式的字典
+            agent_funcs: {agent_name: callable} 格式的字典
+
+        Returns:
+            {agent_name: result} 格式的结果字典
+
+        Example:
+            # 调用D5并行组
+            results = orch.call_parallel_group(
+                "D5-并行组",
+                {
+                    "D5-1": {"task": "规则执行映射"},
+                    "D5-2": {"task": "执行验证映射"},
+                    "D5-3": {"task": "悬空规则检测"},
+                    "D5-4": {"task": "盲评风险检测"},
+                },
+                {
+                    "D5-1": d5_1_agent_func,
+                    "D5-2": d5_2_agent_func,
+                    "D5-3": d5_3_agent_func,
+                    "D5-4": d5_4_agent_func,
+                }
+            )
+        """
+        self.log(f"准备调用并行组 [{group_name}]...")
+
+        # 获取组内的Agent列表
+        if group_name not in OrchestratorConfig.ARCHITECTURE_PARALLEL_GROUPS:
+            raise OrchestratorError(f"未知并行组: {group_name}")
+
+        agents = OrchestratorConfig.ARCHITECTURE_PARALLEL_GROUPS[group_name]
+        self.log(f"并行组 [{group_name}] 包含 {len(agents)} 个Agent: {agents}")
+
+        results = {}
+
+        # 记录并行调用开始
+        self.log(f"开始并行调用 {len(agents)} 个Agent...", "INFO")
+
+        # 在SOLO环境中，这里应该返回任务配置
+        # 主Agent需要使用Task工具并行调用这些子代理
+        for agent_name in agents:
+            if agent_name not in agents_data:
+                self.log(f"警告：Agent [{agent_name}] 没有输入数据", "WARNING")
+
+            # 记录为待执行
+            record = AgentCallRecord(
+                agent_name=agent_name,
+                call_time=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                status="pending_parallel",
+                output_path=None
+            )
+            self.call_records.append(record)
+
+        # 返回并行调用配置（供SOLO Task工具使用）
+        parallel_config = {
+            "group_name": group_name,
+            "agents": agents,
+            "agents_data": agents_data,
+            "call_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        }
+
+        self.log(f"并行组 [{group_name}] 配置已生成，等待SOLO Task工具执行", "INFO")
+
+        return parallel_config
+
+    def validate_parallel_execution(self, group_name: str, results: Dict[str, Dict]) -> bool:
+        """
+        验证并行执行结果（P33补丁新增）
+
+        Args:
+            group_name: 并行组名称
+            results: {agent_name: result} 格式的结果字典
+
+        Returns:
+            True if all agents succeeded, False otherwise
+        """
+        agents = OrchestratorConfig.ARCHITECTURE_PARALLEL_GROUPS.get(group_name, [])
+
+        all_success = True
+        for agent_name in agents:
+            if agent_name not in results:
+                self.log(f"并行Agent [{agent_name}] 结果缺失", "ERROR")
+                all_success = False
+            elif results[agent_name].get("status") != "success":
+                self.log(f"并行Agent [{agent_name}] 执行失败", "ERROR")
+                all_success = False
+            else:
+                self.log(f"并行Agent [{agent_name}] 执行成功", "INFO")
+                # 更新记录状态
+                for record in reversed(self.call_records):
+                    if record.agent_name == agent_name and record.status == "pending_parallel":
+                        record.status = "success"
+                        record.output_path = results[agent_name].get("output_path")
+                        break
+
+        if all_success:
+            self.log(f"并行组 [{group_name}] 所有Agent执行成功", "INFO")
+        else:
+            self.log(f"并行组 [{group_name}] 存在失败Agent", "ERROR")
+
+        return all_success
+
+    def execute_architecture_flow(self) -> Dict:
+        """
+        执行架构评估完整流程（P33补丁新增）
+
+        按照Step 4的并行+串行混合方式执行：
+        1. 调用A1-主（串行）
+        2. 并行调用D5-1/2/3/4
+        3. 调用A1-整合（串行）
+        """
+        self.log("开始执行架构评估完整流程（并行+串行混合）", "INFO")
+
+        flow_results = {
+            "A1-主": None,
+            "D5-并行": None,
+            "A1-整合": None,
+        }
+
+        # Step 4.1: 调用A1-主（串行）
+        self.log("Step 4.1: 调用A1-主（串行）", "INFO")
+        # 这里需要主Agent自行调用A1-主
+
+        # Step 4.2: 并行调用D5子代理
+        self.log("Step 4.2: 并行调用D5子代理", "INFO")
+        d5_config = self.call_parallel_group(
+            "D5-并行组",
+            {
+                "D5-1": {"task": "规则执行映射"},
+                "D5-2": {"task": "执行验证映射"},
+                "D5-3": {"task": "悬空规则检测"},
+                "D5-4": {"task": "盲评风险检测"},
+            },
+            {}
+        )
+        flow_results["D5-并行"] = d5_config
+
+        # Step 4.3: 调用A1-整合（串行）
+        self.log("Step 4.3: 调用A1-整合（串行）", "INFO")
+        # 这里需要主Agent自行调用A1-整合
+
+        self.log("架构评估完整流程配置已生成", "INFO")
+
+        return flow_results
 
 class OrchestratorError(Exception):
     """编排器错误"""
