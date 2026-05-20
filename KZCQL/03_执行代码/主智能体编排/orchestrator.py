@@ -380,6 +380,22 @@ class Orchestrator:
         agents = OrchestratorConfig.ARCHITECTURE_PARALLEL_GROUPS[group_name]
         self.log(f"并行组 [{group_name}] 包含 {len(agents)} 个Agent: {agents}")
 
+        # ========== P34补丁：配置完整性检查（P0-01修复）==========
+        missing_agents = []
+        for agent_name in agents:
+            if agent_name not in agents_data:
+                missing_agents.append(agent_name)
+                self.log(f"错误：Agent [{agent_name}] 缺少输入数据", "ERROR")
+
+        if missing_agents:
+            error_msg = f"配置完整性检查失败：并行组 [{group_name}] 缺少 {len(missing_agents)} 个Agent的输入数据: {missing_agents}"
+            self.log(error_msg, "ERROR")
+            self.errors.append(f"Config integrity check failed: {error_msg}")
+            raise OrchestratorError(error_msg)
+
+        self.log(f"配置完整性检查通过：所有 {len(agents)} 个Agent都有输入数据", "INFO")
+        # ========== P34补丁结束 ==========
+
         results = {}
 
         # 记录并行调用开始
@@ -388,9 +404,6 @@ class Orchestrator:
         # 在SOLO环境中，这里应该返回任务配置
         # 主Agent需要使用Task工具并行调用这些子代理
         for agent_name in agents:
-            if agent_name not in agents_data:
-                self.log(f"警告：Agent [{agent_name}] 没有输入数据", "WARNING")
-
             # 记录为待执行
             record = AgentCallRecord(
                 agent_name=agent_name,

@@ -82,6 +82,28 @@ result = orch.call_agent(
 - Task工具支持**并行调用多个子代理**
 - 主Agent可以使用并行方式同时调用D5-1/2/3/4
 
+**SOLO并行调用实现方式（P34补丁补充）**：
+
+```python
+# Step 4.2 并行调用D5子代理的正确实现方式
+# 主Agent在同一轮消息中同时启动多个Task工具调用
+
+# ✅ 正确方式：在同一轮消息中并行调用
+result_d5_1 = Task(description="D5-1规则执行映射", query="...", subagent_type="general_purpose_task")
+result_d5_2 = Task(description="D5-2执行验证映射", query="...", subagent_type="general_purpose_task")
+result_d5_3 = Task(description="D5-3悬空规则检测", query="...", subagent_type="general_purpose_task")
+result_d5_4 = Task(description="D5-4盲评风险检测", query="...", subagent_type="general_purpose_task")
+
+# ❌ 错误方式：串行调用（违反D5并行要求）
+# result_d5_1 = Task(...)  # 等待返回
+# result_d5_2 = Task(...)  # 再调用下一个
+```
+
+**验证并行执行的方法**：
+1. 检查中间结果目录是否有4个独立的D5子报告文件
+2. 检查报告生成时间是否接近（并行执行的特征）
+3. 使用D9.3.2的验证方法确认执行证据
+
 ---
 
 **强制要求**：主Agent执行架构评估时，**必须**按照以下流程逐步执行，禁止跳过任何步骤：
