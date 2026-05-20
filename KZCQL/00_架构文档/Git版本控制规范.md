@@ -57,7 +57,40 @@ main (稳定分支)
 | 分支回滚 | git reset --hard 提交哈希 |
 | 紧急修复 | 创建hotfix分支 |
 
-## 六、.gitignore规则
+## 七、远程仓库推送（P34补丁新增）
+
+### 7.1 推送方式
+
+SOLO沙箱环境不支持交互式Git认证（`terminal prompts disabled`），且会话间会重置`~/.git-credentials`凭据缓存。因此采用 **GitHub Personal Access Token (PAT)** 方式进行推送。
+
+### 7.2 推送流程
+
+```bash
+# Step 1：写入凭据（每次新会话首次推送前执行）
+echo "https://<用户名>:<PAT>@github.com" > ~/.git-credentials
+chmod 600 ~/.git-credentials
+
+# Step 2：推送
+cd /workspace/KZCQL
+git push origin main
+```
+
+### 7.3 注意事项
+
+| 事项 | 说明 |
+|------|------|
+| PAT来源 | 由用户提供，主Agent不自行生成 |
+| 凭据持久性 | `~/.git-credentials`在会话间会重置，每次新会话需重新写入 |
+| 安全性 | PAT仅写入沙箱临时文件，不会泄露到版本库 |
+| 推送失败处理 | 提示用户提供PAT，写入后重试 |
+
+### 7.4 推送检查点
+
+- [ ] 凭据已写入 `~/.git-credentials`
+- [ ] `git push` 返回 exit code 0
+- [ ] 远程仓库与本地一致（`git log --oneline origin/main..main` 为空）
+
+## 八、.gitignore规则
 
 - 04_工作区/产出归档/*/稿件/*.docx
 - 04_工作区/产出归档/*/images/*.jpg
@@ -67,7 +100,7 @@ main (稳定分支)
 - .DS_Store, Thumbs.db
 - /workspace/STATE.md
 
-## 七、文件命名规范
+## 九、文件命名规范
 
 | 文件类型 | 命名格式 | 示例 |
 |----------|----------|------|
