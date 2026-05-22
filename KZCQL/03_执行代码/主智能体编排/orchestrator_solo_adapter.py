@@ -33,7 +33,7 @@ class AgentCallRecord:
 class OrchestratorConfig:
     """编排器配置"""
     AGENT_SEQUENCE = [
-        "A1-主",      # 串行执行D1-D4,D6-D9
+        "A1-主",      # 串行执行D1-D4,D6-D10
         "A1-D5-1",    # 规则→执行映射（并行）
         "A1-D5-2",    # 执行→验证映射（并行）
         "A1-D5-3",    # 悬空规则检测（并行）
@@ -95,7 +95,7 @@ class SoloOrchestrator:
         生成执行计划（SOLO可执行）
         
         按照KZCQL架构专家Agent规范：
-        Step 1: A1-主（串行D1-D4,D6-D9）
+        Step 1: A1-主（串行D1-D4,D6-D10）
         Step 2: A1-D5-1到A1-D5-4（并行）
         Step 3: 整合评分
         """
@@ -103,16 +103,16 @@ class SoloOrchestrator:
         
         plan = []
         
-        # Step 1: A1-主（串行执行D1-D4,D6-D9）
+        # Step 1: A1-主（串行执行D1-D4,D6-D10）
         plan.append({
             "step": 1,
             "agent": "A1-主",
             "type": "serial",
-            "description": "串行执行D1-D4,D6-D9维度审查",
+            "description": "串行执行D1-D4,D6-D10维度审查",
             "input": {
                 "review_type": self.review_type,
                 "topic": self.topic,
-                "dimensions": ["D1", "D2", "D3", "D4", "D6", "D7", "D8", "D9"]
+                "dimensions": ["D1", "D2", "D3", "D4", "D6", "D7", "D8", "D9", "D10"]
             },
             "output_format": "A1_主_审查报告.md",
             "timeout": 600,

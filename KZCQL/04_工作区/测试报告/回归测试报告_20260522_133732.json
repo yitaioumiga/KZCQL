@@ -1,0 +1,136 @@
+{
+  "test_time": "2026-05-22 13:37:32",
+  "total_tests": 21,
+  "passed": 20,
+  "failed": 1,
+  "pass_rate": "95.2%",
+  "status": "失败",
+  "results": [
+    {
+      "test_name": "核心创作流程",
+      "passed": true,
+      "message": "核心流程顺序正确",
+      "timestamp": "2026-05-22 13:37:32"
+    },
+    {
+      "test_name": "强制Agent检查",
+      "passed": true,
+      "message": "强制Agent列表: ['W1', 'R1', 'R2', 'R4']",
+      "timestamp": "2026-05-22 13:37:32"
+    },
+    {
+      "test_name": "异常处理流程",
+      "passed": true,
+      "message": "异常处理流程存在",
+      "timestamp": "2026-05-22 13:37:32"
+    },
+    {
+      "test_name": "D2/D3可选流程",
+      "passed": true,
+      "message": "D2/D3为可选Agent，可跳过",
+      "timestamp": "2026-05-22 13:37:32"
+    },
+    {
+      "test_name": "D2→D3数据传递",
+      "passed": true,
+      "message": "数据传递机制存在",
+      "timestamp": "2026-05-22 13:37:32"
+    },
+    {
+      "test_name": "向后兼容性",
+      "passed": true,
+      "message": "不使用D2/D3时流程正常",
+      "timestamp": "2026-05-22 13:37:32"
+    },
+    {
+      "test_name": "编排器脚本",
+      "passed": true,
+      "message": "编排器配置正确",
+      "timestamp": "2026-05-22 13:37:32"
+    },
+    {
+      "test_name": "WebSearch工具",
+      "passed": true,
+      "message": "WebSearch工具可正常加载",
+      "timestamp": "2026-05-22 13:37:32"
+    },
+    {
+      "test_name": "D2调研Agent",
+      "passed": true,
+      "message": "D2 Agent可正常加载",
+      "timestamp": "2026-05-22 13:37:32"
+    },
+    {
+      "test_name": "D2输出格式",
+      "passed": true,
+      "message": "D2输出格式包含必要字段",
+      "timestamp": "2026-05-22 13:37:32"
+    },
+    {
+      "test_name": "D3输出格式",
+      "passed": true,
+      "message": "D3输出格式包含必要字段",
+      "timestamp": "2026-05-22 13:37:32"
+    },
+    {
+      "test_name": "D2/D3→W1数据兼容",
+      "passed": true,
+      "message": "数据格式兼容",
+      "timestamp": "2026-05-22 13:37:32"
+    },
+    {
+      "test_name": "智能体注册表",
+      "passed": true,
+      "message": "智能体注册表包含D2/D3",
+      "timestamp": "2026-05-22 13:37:32"
+    },
+    {
+      "test_name": "规范文件完整性",
+      "passed": true,
+      "message": "D2/D3规范文件存在",
+      "timestamp": "2026-05-22 13:37:32"
+    },
+    {
+      "test_name": "输入包模板完整性",
+      "passed": true,
+      "message": "全部16个输入包模板存在",
+      "timestamp": "2026-05-22 13:37:32"
+    },
+    {
+      "test_name": "自身规范读取三重保障",
+      "passed": true,
+      "message": "三重保障验证通过（规范:11/11, injector:✓, 模板:✓）",
+      "timestamp": "2026-05-22 13:37:32"
+    },
+    {
+      "test_name": "错误处理指南集成",
+      "passed": true,
+      "message": "错误类型完整(8个), 模板引用(16/16)",
+      "timestamp": "2026-05-22 13:37:32"
+    },
+    {
+      "test_name": "评分体系维度命名空间",
+      "passed": true,
+      "message": "评分体系包含维度命名空间说明和分制标注",
+      "timestamp": "2026-05-22 13:37:32"
+    },
+    {
+      "test_name": "orchestrator维度列表(D6-D10)",
+      "passed": true,
+      "message": "orchestrator.py维度列表已更新为D6-D10",
+      "timestamp": "2026-05-22 13:37:32"
+    },
+    {
+      "test_name": "架构审查报告模板",
+      "passed": true,
+      "message": "架构审查报告模板存在且包含十维度评分",
+      "timestamp": "2026-05-22 13:37:32"
+    },
+    {
+      "test_name": "旧术语清理(110分制/九维度/八维度)",
+      "passed": false,
+      "message": "发现3处旧术语: ['00_架构文档/错误处理指南.md: 110分制', '02_子Agent规范/架构专家组/架构专家Agent.md: 110分制', '02_子Agent规范/架构专家组/架构专家Agent.md: 九维度']",
+      "timestamp": "2026-05-22 13:37:32"
+    }
+  ]
+}

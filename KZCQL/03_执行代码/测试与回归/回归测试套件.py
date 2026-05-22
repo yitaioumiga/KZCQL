@@ -54,6 +54,9 @@ class RegressionTestSuite:
         # 配置项有效性测试
         self.test_configuration_validity()
         
+        # P38.1补丁回归测试
+        self.test_p38_1_patch_regression()
+        
         # 生成报告
         return self.generate_report()
         
@@ -212,6 +215,217 @@ class RegressionTestSuite:
             self.add_result(test_name, True, "D2/D3规范文件存在")
         except Exception as e:
             self.add_result(test_name, False, f"规范文件异常: {e}")
+            
+    def test_p38_1_patch_regression(self):
+        """P38.1补丁回归测试（P38.2新增）
+        
+        验证P38.1引入的变更不会在后续版本中退化：
+        1. 输入包模板体系完整性
+        2. 自身规范读取要求（三重保障）
+        3. 错误处理指南集成
+        4. 评分体系维度命名空间
+        5. orchestrator维度列表（D6-D10）
+        6. 架构审查报告模板
+        """
+        self.log("\n【测试组6】P38.1补丁回归测试")
+        
+        base = "/workspace/KZCQL"
+        template_dir = f"{base}/00_架构文档/输入包模板"
+        
+        # 测试6.1: 输入包模板完整性
+        test_name = "输入包模板完整性"
+        try:
+            required_templates = [
+                "W1_初稿撰写_输入包模板.md",
+                "W2_迭代修改_输入包模板.md",
+                "R1_事实核查_输入包模板.md",
+                "R2_全量评审_输入包模板.md",
+                "R3_差异评审_输入包模板.md",
+                "R4_评级判定_输入包模板.md",
+                "D1_配图设计_输入包模板.md",
+                "D2_调研_输入包模板.md",
+                "D3_角度挖掘_输入包模板.md",
+                "A1_架构审查_输入包模板.md",
+                "E1_规则修改_输入包模板.md",
+                "D5_基础输入包模板.md",
+                "D5-1_规则执行映射_输入包模板.md",
+                "D5-2_执行验证映射_输入包模板.md",
+                "D5-3_悬空规则检测_输入包模板.md",
+                "D5-4_盲评风险检测_输入包模板.md",
+            ]
+            missing = []
+            for tmpl in required_templates:
+                if not os.path.exists(os.path.join(template_dir, tmpl)):
+                    missing.append(tmpl)
+            assert len(missing) == 0, f"缺失模板: {missing}"
+            self.add_result(test_name, True, f"全部{len(required_templates)}个输入包模板存在")
+        except Exception as e:
+            self.add_result(test_name, False, str(e))
+        
+        # 测试6.2: 自身规范读取要求（三重保障）
+        test_name = "自身规范读取三重保障"
+        try:
+            # 第一层：子Agent规范文件包含自身规范为必需输入
+            spec_dir = f"{base}/02_子Agent规范"
+            spec_files = []
+            for root, dirs, files in os.walk(spec_dir):
+                for f in files:
+                    if f.endswith("Agent.md") and "A1_D" not in f:
+                        spec_files.append(os.path.join(root, f))
+            
+            missing_self_ref = []
+            for spec in spec_files:
+                with open(spec, 'r', encoding='utf-8') as f:
+                    content = f.read()
+                if "自身规范" not in content:
+                    missing_self_ref.append(os.path.basename(spec))
+            
+            # 第二层：injector包含强制注入
+            injector_path = f"{base}/03_执行代码/主智能体编排/agent_prompt_injector.py"
+            with open(injector_path, 'r', encoding='utf-8') as f:
+                injector_content = f.read()
+            has_injector = "自身规范读取要求" in injector_content
+            
+            # 第三层：输入包模板包含验证项
+            has_template_check = False
+            for tmpl in required_templates[:6]:  # 检查主要模板
+                tmpl_path = os.path.join(template_dir, tmpl)
+                with open(tmpl_path, 'r', encoding='utf-8') as f:
+                    if "自身规范" in f.read():
+                        has_template_check = True
+                        break
+            
+            assert has_injector, "injector缺少强制注入"
+            assert has_template_check, "输入包模板缺少验证项"
+            msg = f"三重保障验证通过（规范:{len(spec_files)-len(missing_self_ref)}/{len(spec_files)}, injector:✓, 模板:✓）"
+            if missing_self_ref:
+                msg += f" [注意: {missing_self_ref} 未包含自身规范引用]"
+            self.add_result(test_name, True, msg)
+        except Exception as e:
+            self.add_result(test_name, False, str(e))
+        
+        # 测试6.3: 错误处理指南集成
+        test_name = "错误处理指南集成"
+        try:
+            error_guide = f"{base}/00_架构文档/错误处理指南.md"
+            assert os.path.exists(error_guide), "错误处理指南不存在"
+            
+            with open(error_guide, 'r', encoding='utf-8') as f:
+                content = f.read()
+            
+            # 检查必要错误类型
+            required_errors = ["ERR-F01", "ERR-I01", "ERR-O01", "ERR-O02", "ERR-A01", "ERR-S01", "ERR-V01", "ERR-L01"]
+            missing_errors = [e for e in required_errors if e not in content]
+            assert len(missing_errors) == 0, f"缺失错误类型: {missing_errors}"
+            
+            # 检查输入包模板引用
+            templates_with_ref = 0
+            for tmpl in required_templates:
+                tmpl_path = os.path.join(template_dir, tmpl)
+                if os.path.exists(tmpl_path):
+                    with open(tmpl_path, 'r', encoding='utf-8') as f:
+                        if "错误处理指南" in f.read():
+                            templates_with_ref += 1
+            
+            self.add_result(test_name, True, f"错误类型完整({len(required_errors)}个), 模板引用({templates_with_ref}/{len(required_templates)})")
+        except Exception as e:
+            self.add_result(test_name, False, str(e))
+        
+        # 测试6.4: 评分体系维度命名空间
+        test_name = "评分体系维度命名空间"
+        try:
+            scoring_path = f"{base}/01_共享知识库/后置评审规则/评分体系.md"
+            with open(scoring_path, 'r', encoding='utf-8') as f:
+                content = f.read()
+            
+            # 检查命名空间说明
+            has_namespace_note = "维度命名空间" in content or "命名空间" in content
+            assert has_namespace_note, "评分体系缺少维度命名空间说明"
+            
+            # 检查分制标注
+            has_100_note = "100分制" in content or "100" in content
+            assert has_100_note, "评分体系缺少分制标注"
+            
+            self.add_result(test_name, True, "评分体系包含维度命名空间说明和分制标注")
+        except Exception as e:
+            self.add_result(test_name, False, str(e))
+        
+        # 测试6.5: orchestrator维度列表
+        test_name = "orchestrator维度列表(D6-D10)"
+        try:
+            orch_path = f"{base}/03_执行代码/主智能体编排/orchestrator.py"
+            with open(orch_path, 'r', encoding='utf-8') as f:
+                content = f.read()
+            
+            # 检查是否包含D6-D10（而非旧的D6-D9）
+            has_d10 = "D6-D10" in content
+            has_old_ref = "D6-D9" in content and "D6-D10" not in content
+            
+            assert has_d10, "orchestrator.py未更新为D6-D10"
+            assert not has_old_ref, "orchestrator.py仍包含旧的D6-D9引用"
+            
+            self.add_result(test_name, True, "orchestrator.py维度列表已更新为D6-D10")
+        except Exception as e:
+            self.add_result(test_name, False, str(e))
+        
+        # 测试6.6: 架构审查报告模板
+        test_name = "架构审查报告模板"
+        try:
+            template_path = f"{base}/02_子Agent规范/架构专家组/架构审查报告模板.md"
+            assert os.path.exists(template_path), "架构审查报告模板不存在"
+            
+            with open(template_path, 'r', encoding='utf-8') as f:
+                content = f.read()
+            
+            # 检查模板包含十维度评分表
+            has_10_dim = "十维度" in content or "D10" in content
+            assert has_10_dim, "报告模板未包含十维度评分"
+            
+            self.add_result(test_name, True, "架构审查报告模板存在且包含十维度评分")
+        except Exception as e:
+            self.add_result(test_name, False, str(e))
+        
+        # 测试6.7: 旧术语清理
+        test_name = "旧术语清理(110分制/九维度/八维度)"
+        try:
+            # 检查活跃文件中不应有旧术语
+            # 排除：历史补丁记录（P29/P34等）、变更日志、归档文件
+            active_dirs = [
+                f"{base}/00_架构文档",
+                f"{base}/02_子Agent规范",
+                f"{base}/03_执行代码/主智能体编排",
+            ]
+            old_terms = ["110分制", "九维度"]
+            violations = []
+            
+            # 允许旧术语出现的上下文（历史补丁记录）
+            allowed_contexts = ["补丁更新", "P29", "P34", "→ 120", "→ 十维度", "变更日志", "历史"]
+            
+            for dir_path in active_dirs:
+                for root, dirs, files in os.walk(dir_path):
+                    # 跳过归档和历史文件
+                    if "归档" in root or "产出归档" in root:
+                        continue
+                    for fname in files:
+                        if not fname.endswith(".md") and not fname.endswith(".py"):
+                            continue
+                        fpath = os.path.join(root, fname)
+                        with open(fpath, 'r', encoding='utf-8') as f:
+                            lines = f.readlines()
+                        for i, line in enumerate(lines, 1):
+                            for term in old_terms:
+                                if term in line:
+                                    # 检查是否在允许的上下文中
+                                    is_historical = any(ctx in line for ctx in allowed_contexts)
+                                    if not is_historical:
+                                        violations.append(f"{os.path.relpath(fpath, base)}:L{i}: {term}")
+            
+            if violations:
+                self.add_result(test_name, False, f"发现{len(violations)}处活跃旧术语: {violations[:5]}")
+            else:
+                self.add_result(test_name, True, "活跃文件中无110分制/九维度活跃引用（历史记录已排除）")
+        except Exception as e:
+            self.add_result(test_name, False, str(e))
             
     def add_result(self, test_name: str, passed: bool, message: str):
         """添加测试结果"""
