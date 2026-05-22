@@ -51,11 +51,74 @@ main (稳定分支)
 
 ## 五、回滚机制
 
+### 5.1 三种回退方式
+
+| 方式 | 操作 | 速度 | 安全性 | 适用场景 |
+|------|------|------|--------|----------|
+| **① 实验分支（推荐）** | `git checkout -b experiment/xxx` → 实验失败后 `git checkout main && git branch -D experiment/xxx` | 秒级 | **零风险** — main完全不受影响 | 新功能实验、规则更新验证 |
+| **② 标签+reset** | 先打标签 `git tag v-stable`，再 `git reset --hard v-stable` | 秒级 | 低风险 — 标签保存了快照 | 需要彻底回退到某个稳定版本 |
+| **③ revert** | `git revert HEAD` 产生一个新的反向commit | 秒级 | 最安全 — 保留完整历史 | 已推送到远程的commit需要撤回 |
+
+### 5.2 推荐工作流：实验分支策略
+
+```
+当前状态: main (v-stable, 已验证)
+    │
+    ├─→ git tag v-stable-YYYYMMDD          ← 先打标签锁定当前稳定版
+    │
+    ├─→ git checkout -b experiment/规则更新  ← 创建实验分支
+    │       │
+    │       ├─ 更新规则文件
+    │       ├─ 实际写作测试
+    │       │
+    │       ├─ 满意 → git checkout main && git merge experiment/规则更新
+    │       │
+    │       └─ 不满意 → git checkout main && git branch -D experiment/规则更新
+    │                   # 秒级回退，零残留
+    │
+    └─→ main 始终保持稳定
+```
+
+### 5.3 单文件回滚
+
 | 场景 | 操作 |
 |------|------|
-| 单文件回滚 | git checkout main -- 文件路径 |
-| 分支回滚 | git reset --hard 提交哈希 |
-| 紧急修复 | 创建hotfix分支 |
+| 回滚单个文件到某次commit | `git checkout <commit> -- 文件路径` |
+| 查看某文件的历史版本 | `git log --oneline -- 文件路径` |
+| 回滚最近一次commit的某个文件 | `git checkout HEAD~1 -- 文件路径` |
+
+### 5.4 紧急修复
+
+| 场景 | 操作 |
+|------|------|
+| 紧急修复 | 创建hotfix分支，修复后合并到main |
+| 已推送的commit需要撤回 | 使用 `git revert` 产生反向commit |
+
+## 六、标签管理
+
+### 6.1 标签命名规范
+
+| 标签类型 | 格式 | 示例 |
+|----------|------|------|
+| 架构评估稳定版 | `v-stable-P{版本号}` | `v-stable-P38.4` |
+| 规则更新前快照 | `v-pre-{描述}` | `v-pre-APAG-integration` |
+| 里程碑版本 | `v{主版本}.{次版本}` | `v1.0` |
+
+### 6.2 标签操作
+
+```bash
+# 创建标签
+git tag -a v-stable-P38.4 -m 'P38.4架构评估A-级别，76文件14060行变更已验证'
+
+# 查看标签
+git tag -l
+
+# 回退到标签
+git reset --hard v-stable-P38.4
+
+# 删除标签（如打错了）
+git tag -d v-stable-P38.4
+```
 
 ## 七、远程仓库推送（P34补丁新增）
 
@@ -109,4 +172,4 @@ git push origin main
 | 架构文档 | {名称}.md | Git版本控制规范.md |
 | 计划文档 | {名称}计划.md | A1并行架构升级计划.md |
 
-*最后更新：2026-05-09*
+*最后更新：2026-05-22（多平台适配改造：新增实验分支策略、标签管理、三种回退方式）*
