@@ -59,7 +59,8 @@ class OrchestratorConfig:
         "ImageCheck", # 配图检查
         "R1",         # 事实核查（强制）
         "R2",         # 全量评审（强制）
-        "R3",         # 差异评审（如需要）
+        "W2",         # 迭代修改Agent（R2未通过时触发）
+        "R3",         # 差异评审（W2修改后触发）
         "R4",         # 评级判定（强制）
         "D1",         # 配图设计（如需要）
     ]
@@ -291,7 +292,7 @@ class SoloOrchestrator:
             "step": step_num,
             "agent": "D2",
             "type": "conditional_mandatory" if is_long_form else "optional",
-            "description": "调研Agent：生成跨领域信息地图",
+            "description": "调研Agent：生成跨领域信息地图，优先查阅 /workspace/KZCQL/01_共享知识库/创作素材/素材索引.md 定位相关素材",
             "mandatory": is_long_form,
             "input": {
                 "topic": self.topic,
@@ -377,6 +378,7 @@ class SoloOrchestrator:
 
         # Step 6: R2全量评审（强制）
         step_num += 1
+        r2_step = step_num
         plan.append({
             "step": step_num,
             "agent": "R2",
@@ -394,15 +396,46 @@ class SoloOrchestrator:
             "timeout": 300,
         })
 
-        # Step 7: R3差异评审（如需要，迭代轮次>=2时启用）
+        # Step 7: W2迭代修改Agent（R2评分<85时触发）
+        step_num += 1
+        w2_step = step_num
+        plan.append({
+            "step": step_num,
+            "agent": "W2",
+            "type": "conditional",
+            "description": "迭代修改Agent：根据R2评审意见修改稿件",
+            "mandatory": False,
+            "depends_on": ["R2"],
+            "iteration_trigger": {
+                "condition": "R2评分 < 85（B级）",
+                "max_iterations": 3,
+                "loop_sequence": ["W2", "R3", "R2"],
+                "exit_condition": "R2评分 >= 85（A级）",
+            },
+            "input": {
+                "article_file": "初稿_v0.1.md",
+                "r2_report": "R2_全量评审报告.md",
+                "spec_file": "/workspace/KZCQL/02_子Agent规范/写作组/迭代修改Agent.md",
+                "input_package": "/workspace/KZCQL/00_架构文档/输入包模板/W2_迭代修改_输入包模板.md",
+            },
+            "output_format": "初稿_v0.2.md",
+            "timeout": 600,
+        })
+
+        # Step 8: R3差异评审（W2修改后触发）
         step_num += 1
         plan.append({
             "step": step_num,
             "agent": "R3",
-            "type": "optional",
-            "description": "差异评审Agent：对比前后版本差异",
+            "type": "conditional",
+            "description": "差异评审Agent：对比W2修改前后版本差异",
             "mandatory": False,
-            "depends_on": ["R2"],
+            "depends_on": ["W2"],
+            "iteration_context": {
+                "role": "验证W2修改质量",
+                "on_pass": "重新触发R2全量评审",
+                "on_fail": "重新触发W2修改（受max_iterations限制）",
+            },
             "input": {
                 "article_before": "初稿_v0.1.md",
                 "article_after": "初稿_v0.2.md",
@@ -415,7 +448,7 @@ class SoloOrchestrator:
             "timeout": 300,
         })
 
-        # Step 8: R4评级判定（强制）
+        # Step 9: R4评级判定（强制）
         step_num += 1
         plan.append({
             "step": step_num,
@@ -423,7 +456,10 @@ class SoloOrchestrator:
             "type": "mandatory",
             "description": "评级判定Agent：综合评级和路由建议",
             "mandatory": True,
-            "depends_on": ["R1", "R2", "R3"],
+            "depends_on": ["R1", "R2"],
+            "iteration_gate": {
+                "description": "仅在迭代循环结束后执行（R2评分>=85或达到max_iterations）",
+            },
             "input": {
                 "r1_report": "R1_事实核查报告.md",
                 "r2_report": "R2_全量评审报告.md",
@@ -435,7 +471,7 @@ class SoloOrchestrator:
             "timeout": 120,
         })
 
-        # Step 9: D1配图设计（如需要）
+        # Step 10: D1配图设计（如需要）
         step_num += 1
         plan.append({
             "step": step_num,
