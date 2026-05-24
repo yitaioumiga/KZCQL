@@ -28,3 +28,7 @@ Thumbs.db
 
 # 用户上传的zip文件
 *.zip
+
+# 大文件排除
+*.zip
+KZCQL工作区文章合集*
