@@ -376,7 +376,8 @@ EOF
     
     # ARC-01: 归档目录结构检查（P37修复激活）
     total_checks=$((total_checks + 1))
-    local archive_dir="${WORKSPACE_ROOT}/KZCQL/04_工作区/产出归档"
+    # 从md文件路径提取文章所在目录（如 04_工作区/产出归档/20260526_AI写作架构/稿件/article.md -> 04_工作区/产出归档/20260526_AI写作架构）
+    local archive_dir=$(dirname "$(dirname "$MD_FILE")")
     if check_arc01 "$archive_dir" "$LOG_FILE"; then
         pass_checks=$((pass_checks + 1))
         results="${results}ARC-01: PASS\n"

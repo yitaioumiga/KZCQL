@@ -1,0 +1,12 @@
+{
+  "session_id": "20260526_113512_8942",
+  "timestamp": "2026-05-26T11:35:13+00:00",
+  "article_key": "AI写作架构",
+  "md_file": "04_工作区/产出归档/20260526_AI写作架构/稿件/AI写作架构_v2.md",
+  "total_checks": 5,
+  "pass_checks": 4,
+  "fail_checks": 1,
+  "pass_rate": 80,
+  "overall_result": "FAIL",
+  "log_file": "/workspace/KZCQL/04_工作区/检查日志/AI写作架构/检查日志_20260526_113512_8942.md"
+}
