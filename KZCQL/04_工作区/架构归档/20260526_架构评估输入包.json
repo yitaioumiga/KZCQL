@@ -1,0 +1,90 @@
+{
+  "version": "v2.1",
+  "trigger": "重大变更",
+  "trigger_reason": "规则文件和Agent规范大量更新（AI写作架构文章经验沉淀）",
+  "change_summary": {
+    "total_files_changed": 8,
+    "rule_updates": 6,
+    "agent_spec_updates": 2,
+    "material_library_additions": 1
+  },
+  "changes": [
+    {
+      "type": "新增否决规则",
+      "file": "01_共享知识库/后置评审规则/一票否决项.md",
+      "description": "V-23 内部数据语境一致性——防止架构评分误用为初稿质量评分",
+      "impact": "高",
+      "affected_agents": ["R1", "W1"]
+    },
+    {
+      "type": "更新否决规则数量",
+      "file": "02_子Agent规范/评审专家组/事实核查Agent.md",
+      "description": "19→23项（7处同步更新）",
+      "impact": "中",
+      "affected_agents": ["R1"]
+    },
+    {
+      "type": "更新否决规则数量",
+      "file": "00_架构文档/智能体注册表与路由规则.md",
+      "description": "22→23项（3处同步更新）",
+      "impact": "中",
+      "affected_agents": ["R1"]
+    },
+    {
+      "type": "新增自检项",
+      "file": "02_子Agent规范/写作组/初稿撰写Agent.md",
+      "description": "L3新增：内部数据语境一致性自检项",
+      "impact": "高",
+      "affected_agents": ["W1"]
+    },
+    {
+      "type": "新增前置规则",
+      "file": "01_共享知识库/前置撰写规则/前置撰写规则_经验沉淀.md",
+      "description": "§19.5 引号使用精细化——保留/删除/禁止混用规则",
+      "impact": "高",
+      "affected_agents": ["W1", "R2"]
+    },
+    {
+      "type": "新增前置规则",
+      "file": "01_共享知识库/前置撰写规则/前置撰写规则_经验沉淀.md",
+      "description": "§19.6 措辞与文章主旨一致性",
+      "impact": "高",
+      "affected_agents": ["W1", "R2"]
+    },
+    {
+      "type": "更新前置规则",
+      "file": "01_共享知识库/前置撰写规则/前置撰写规则_核心规范.md",
+      "description": "§2.2引号规则细化、§2.3排版呼吸感规则、§21结尾模板扩展",
+      "impact": "中",
+      "affected_agents": ["W1"]
+    },
+    {
+      "type": "新建素材文件",
+      "file": "01_共享知识库/创作素材/作者偏好与风格档案.md",
+      "description": "比喻偏好、措辞偏好、结尾结构偏好、排版偏好",
+      "impact": "中",
+      "affected_agents": ["D2", "D3", "W1"]
+    }
+  ],
+  "key_files": [
+    "01_共享知识库/后置评审规则/一票否决项.md",
+    "02_子Agent规范/评审专家组/事实核查Agent.md",
+    "00_架构文档/智能体注册表与路由规则.md",
+    "02_子Agent规范/写作组/初稿撰写Agent.md",
+    "01_共享知识库/前置撰写规则/前置撰写规则_经验沉淀.md",
+    "01_共享知识库/前置撰写规则/前置撰写规则_核心规范.md",
+    "01_共享知识库/创作素材/作者偏好与风格档案.md",
+    "01_共享知识库/创作素材/素材索引.md"
+  ],
+  "previous_assessment": {
+    "date": "2026-05-23",
+    "score": 106,
+    "grade": "A",
+    "d5_skipped": false
+  },
+  "focus_areas": [
+    "D2: 规则一致性——新增V-23与现有规则的兼容性",
+    "D3: 执行一致性——W1 L3新增自检项的可执行性",
+    "D5: 深度评估——规则→执行→验证的完整映射"
+  ]
+}
