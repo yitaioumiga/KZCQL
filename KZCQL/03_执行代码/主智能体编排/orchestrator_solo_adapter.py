@@ -292,7 +292,7 @@ class SoloOrchestrator:
             "step": step_num,
             "agent": "D2",
             "type": "conditional_mandatory" if is_long_form else "optional",
-            "description": "调研Agent：生成跨领域信息地图，优先查阅 /workspace/KZCQL/01_共享知识库/创作素材/素材索引.md 定位相关素材",
+            "description": "调研Agent：生成跨领域信息地图，优先查阅素材索引.md（粗索引）→ 细索引/（定位段落）→ 外部资产索引/（项目素材）",
             "mandatory": is_long_form,
             "input": {
                 "topic": self.topic,
